@@ -1,8 +1,21 @@
 # funcoes_veiculos.py
 from banco import conectar
 
+
 # Lista de tipos válidos para validação
 TIPOS_VALIDOS = ["Sedan", "Hatch", "SUV", "Moto", "Van"]
+
+
+def contar_veiculos_por_marca():
+    conn = conectar()
+    cursor = conn.cursor()
+    query = "SELECT marca, COUNT(*) FROM veiculos GROUP BY marca"
+    cursor.execute(query)
+    resultados = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return resultados
+
 
 def cadastrar_veiculo(modelo, marca, cor, placa, tipo, ano):
     conn = conectar()

@@ -22,7 +22,8 @@ def cadastrar_cliente(nome, cpf, telefone, email):
 
     cursor.close()
     conn.close()
-    # listar_clientes()
+    listar_clientes()
+
 
     return True, "Cliente cadastrado com sucesso!"
 

@@ -4,6 +4,7 @@ from tkinter import messagebox
 from interface_clientes import TelaClientes
 from interface_veiculos import TelaVeiculos
 from interface_locacao import TelaLocacao  # Importar a nova tela de Locação
+from interface_assistente_virtual import TelaAssistenteVirtual
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -21,21 +22,25 @@ class MenuPrincipal(ctk.CTk):
         self.label.pack(pady=20)
 
         self.btn_clientes = ctk.CTkButton(self, text="Clientes", command=self.abrir_clientes)
-        self.btn_clientes.pack(pady=10)
+        self.btn_clientes.pack(pady=8)
 
         self.btn_veiculos = ctk.CTkButton(self, text="Veículos", command=self.abrir_veiculos)
-        self.btn_veiculos.pack(pady=10)
+        self.btn_veiculos.pack(pady=8)
 
         self.btn_locacao = ctk.CTkButton(self, text="Locação", command=self.abrir_locacao)
-        self.btn_locacao.pack(pady=10)
+        self.btn_locacao.pack(pady=8)
+        
+        self.btn_locacao = ctk.CTkButton(self, text="Assistente virtual", command=self.abrir_assistente_virtual)
+        self.btn_locacao.pack(pady=8)
 
         self.btn_sair = ctk.CTkButton(self, text="Sair", fg_color="red", command=self.sair)
-        self.btn_sair.pack(pady=10)
+        self.btn_sair.pack(pady=8)
 
         # Variáveis para controlar janelas abertas
         self.tela_clientes = None
         self.tela_veiculos = None
         self.tela_locacao = None 
+        self.tela_assistente_virtual = None 
 
     def abrir_clientes(self):
         if self.tela_clientes is None or not self.tela_clientes.winfo_exists():
@@ -57,6 +62,13 @@ class MenuPrincipal(ctk.CTk):
             self.tela_locacao.grab_set()
         else:
             self.tela_locacao.focus()
+            
+    def abrir_assistente_virtual(self):
+        if self.tela_assistente_virtual is None  or not self.tela_assistente_virtual.winfo_exists():
+            self.tela_assistente_virtual = TelaAssistenteVirtual(self)
+            # self.tela_assistente_virtual.grab_set()
+        else:
+            self.tela_assistente_virtual.focus()
 
     def sair(self):
         self.destroy()

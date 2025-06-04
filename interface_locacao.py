@@ -1,4 +1,3 @@
-#interface_locacao.py
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -10,6 +9,8 @@ from funcoes_locacao import (
     editar_locacao,
     atualizar_status_locacao
 )
+from funcoes_clientes import listar_clientes
+from funcoes_veiculos import listar_veiculos
 
 class TelaLocacao(ctk.CTkToplevel):
     def __init__(self, master=None):
@@ -31,16 +32,29 @@ class TelaLocacao(ctk.CTkToplevel):
         self.entry_id.grid(row=0, column=1, padx=5, pady=5)
         self.entry_id.configure(state="disabled")
 
+        # ---------- CLIENTE ----------
         self.label_cliente = ctk.CTkLabel(self.frame_form, text="Cliente:")
         self.label_cliente.grid(row=1, column=0, sticky="w", padx=5, pady=5)
-        self.entry_cliente = ctk.CTkEntry(self.frame_form, width=300)
-        self.entry_cliente.grid(row=1, column=1, padx=5, pady=5)
 
+        clientes_raw = listar_clientes()
+        self.cliente_map = {nome: id_ for id_, nome, *_ in clientes_raw}
+        self.clientes = list(self.cliente_map.keys())
+
+        self.combo_cliente = ttk.Combobox(self.frame_form, values=self.clientes, state="readonly", width=47)
+        self.combo_cliente.grid(row=1, column=1, padx=5, pady=5)
+
+        # ---------- VEICULO ----------
         self.label_veiculo = ctk.CTkLabel(self.frame_form, text="Veículo:")
         self.label_veiculo.grid(row=2, column=0, sticky="w", padx=5, pady=5)
-        self.entry_veiculo = ctk.CTkEntry(self.frame_form, width=300)
-        self.entry_veiculo.grid(row=2, column=1, padx=5, pady=5)
 
+        veiculos_raw = listar_veiculos()
+        self.veiculo_map = {modelo: id_ for id_, modelo, *_ in veiculos_raw}
+        self.veiculos = list(self.veiculo_map.keys())
+
+        self.combo_veiculo = ttk.Combobox(self.frame_form, values=self.veiculos, state="readonly", width=47)
+        self.combo_veiculo.grid(row=2, column=1, padx=5, pady=5)
+
+        # ---------- DEMAIS CAMPOS ----------
         self.label_retirada = ctk.CTkLabel(self.frame_form, text="Data Retirada (DD/MM/AAAA):")
         self.label_retirada.grid(row=3, column=0, sticky="w", padx=5, pady=5)
         self.entry_retirada = ctk.CTkEntry(self.frame_form, width=300)
@@ -63,6 +77,7 @@ class TelaLocacao(ctk.CTkToplevel):
         self.combo_status.grid(row=6, column=1, padx=5, pady=5)
         self.combo_status.current(0)
 
+        # ---------- BOTÕES ----------
         self.frame_botoes = ctk.CTkFrame(self)
         self.frame_botoes.pack(pady=10, padx=10)
 
@@ -90,6 +105,7 @@ class TelaLocacao(ctk.CTkToplevel):
         self.btn_voltar = ctk.CTkButton(self.frame_botoes, text="Voltar", fg_color="red", command=self.destroy)
         self.btn_voltar.grid(row=1, column=3, padx=5, pady=3)
 
+        # ---------- TREEVIEW ----------
         self.tree = ttk.Treeview(self, columns=("ID", "Cliente", "Veículo", "Retirada", "Devolução", "Valor", "Status"), show="headings")
         for col in ("ID", "Cliente", "Veículo", "Retirada", "Devolução", "Valor", "Status"):
             self.tree.heading(col, text=col)
@@ -123,14 +139,18 @@ class TelaLocacao(ctk.CTkToplevel):
         return True
 
     def cadastrar(self):
-        cliente = self.entry_cliente.get().strip()
-        veiculo = self.entry_veiculo.get().strip()
+        nome_cliente = self.combo_cliente.get().strip()
+        id_cliente = self.cliente_map.get(nome_cliente)
+
+        modelo_veiculo = self.combo_veiculo.get().strip()
+        id_veiculo = self.veiculo_map.get(modelo_veiculo)
+
         retirada = self.entry_retirada.get().strip()
         devolucao = self.entry_devolucao.get().strip()
         valor = self.entry_valor.get().strip()
         status = self.combo_status.get()
 
-        if not cliente or not veiculo or not retirada or not devolucao or not valor:
+        if not id_cliente or not id_veiculo or not retirada or not devolucao or not valor:
             messagebox.showwarning("Aviso", "Preencha todos os campos.")
             return
 
@@ -144,7 +164,7 @@ class TelaLocacao(ctk.CTkToplevel):
             messagebox.showwarning("Erro", "O campo Valor deve ser numérico.")
             return
 
-        sucesso, msg = cadastrar_locacao(cliente, veiculo, retirada, devolucao, valor, status)
+        sucesso, msg = cadastrar_locacao(id_cliente, id_veiculo, retirada, devolucao, valor, status)
         if sucesso:
             messagebox.showinfo("Sucesso", msg)
             self.limpar_campos()
@@ -153,12 +173,12 @@ class TelaLocacao(ctk.CTkToplevel):
             messagebox.showwarning("Erro", msg)
 
     def consultar(self):
-        cliente = self.entry_cliente.get().strip()
-        if not cliente:
-            messagebox.showwarning("Aviso", "Digite o nome do cliente para consultar.")
+        nome_cliente = self.combo_cliente.get().strip()
+        if not nome_cliente:
+            messagebox.showwarning("Aviso", "Selecione o cliente para consultar.")
             return
         self.ocultar_tabela()
-        resultados = consultar_locacao_por_cliente(cliente)
+        resultados = consultar_locacao_por_cliente(nome_cliente)
         if resultados:
             for loc in resultados:
                 self.tree.insert("", "end", values=loc)
@@ -180,14 +200,18 @@ class TelaLocacao(ctk.CTkToplevel):
             messagebox.showwarning("Aviso", "Selecione uma locação para editar.")
             return
 
-        cliente = self.entry_cliente.get().strip()
-        veiculo = self.entry_veiculo.get().strip()
+        nome_cliente = self.combo_cliente.get().strip()
+        id_cliente = self.cliente_map.get(nome_cliente)
+
+        modelo_veiculo = self.combo_veiculo.get().strip()
+        id_veiculo = self.veiculo_map.get(modelo_veiculo)
+
         retirada = self.entry_retirada.get().strip()
         devolucao = self.entry_devolucao.get().strip()
         valor = self.entry_valor.get().strip()
         status = self.combo_status.get()
 
-        if not cliente or not veiculo or not retirada or not devolucao or not valor:
+        if not id_cliente or not id_veiculo or not retirada or not devolucao or not valor:
             messagebox.showwarning("Aviso", "Preencha todos os campos.")
             return
 
@@ -201,7 +225,7 @@ class TelaLocacao(ctk.CTkToplevel):
             messagebox.showwarning("Erro", "O campo Valor deve ser numérico.")
             return
 
-        sucesso, msg = editar_locacao(id_loc, cliente, veiculo, retirada, devolucao, valor, status)
+        sucesso, msg = editar_locacao(id_loc, id_cliente, id_veiculo, retirada, devolucao, valor, status)
         if sucesso:
             messagebox.showinfo("Sucesso", msg)
             self.limpar_campos()
@@ -228,8 +252,8 @@ class TelaLocacao(ctk.CTkToplevel):
         self.entry_id.configure(state="normal")
         self.entry_id.delete(0, tk.END)
         self.entry_id.configure(state="disabled")
-        self.entry_cliente.delete(0, tk.END)
-        self.entry_veiculo.delete(0, tk.END)
+        self.combo_cliente.set("")
+        self.combo_veiculo.set("")
         self.entry_retirada.delete(0, tk.END)
         self.entry_devolucao.delete(0, tk.END)
         self.entry_valor.delete(0, tk.END)
@@ -245,11 +269,9 @@ class TelaLocacao(ctk.CTkToplevel):
             self.entry_id.insert(0, dados[0])
             self.entry_id.configure(state="disabled")
 
-            self.entry_cliente.delete(0, tk.END)
-            self.entry_cliente.insert(0, dados[1])
-
-            self.entry_veiculo.delete(0, tk.END)
-            self.entry_veiculo.insert(0, dados[2])
+            # Preencher os comboboxes com base no nome/modelo
+            self.combo_cliente.set(dados[1])
+            self.combo_veiculo.set(dados[2])
 
             self.entry_retirada.delete(0, tk.END)
             self.entry_retirada.insert(0, dados[3])

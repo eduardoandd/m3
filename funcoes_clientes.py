@@ -32,8 +32,10 @@ def listar_clientes():
     cursor = conn.cursor()
     cursor.execute("SELECT id_cliente, nome, cpf, telefone, email FROM clientes")
     resultados = cursor.fetchall()
+    print(resultados)
     cursor.close()
     conn.close()
+    
     return resultados
 
 

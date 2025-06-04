@@ -1,5 +1,6 @@
 # funcoes_locacao.py
 from banco import conectar
+from datetime import datetime
 
 # Lista de status válidos para validação
 STATUS_VALIDOS = ["Pendente", "Ativa", "Concluída", "Cancelada"]
@@ -13,6 +14,15 @@ def cadastrar_locacao(id_cliente, id_veiculo, data_inicio, data_termino, valor, 
         cursor.close()
         conn.close()
         return False, f"Status inválido! Escolha um dos status: {', '.join(STATUS_VALIDOS)}"
+    
+     # Converter de 'DD/MM/YYYY' para datetime.date
+    try:
+        data_inicio = datetime.strptime(data_inicio, '%d/%m/%Y').date()
+        data_termino = datetime.strptime(data_termino, '%d/%m/%Y').date()
+    except ValueError as e:
+        cursor.close()
+        conn.close()
+        return False, f"Erro na conversão de data: {e}"
 
     # Inserir nova locação
     query_insert = """
